@@ -1,6 +1,10 @@
 package uk.ac.brighton.uni.ab607.hangman;
 
+import java.util.Arrays;
+
 public class Logic {
+    private static final int MAX_LIVES = 7;
+
     private String word = "";
     private char[] letters;
     private int lives = 0;
@@ -8,13 +12,11 @@ public class Logic {
     private WordReader wr = new WordReader();
 
     public void newGame() {
-        lives = 7;
+        lives = MAX_LIVES;
 
         word = wr.getRandomWord();
         letters = new char[word.length()];
-
-        for (int i = 0; i < letters.length; i++)
-            letters[i] = '.';
+        Arrays.fill(letters, '.');
     }
 
     public void guess(char c) {

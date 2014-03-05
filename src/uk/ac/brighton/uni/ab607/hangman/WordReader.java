@@ -9,7 +9,7 @@ public class WordReader {
     private InputStream in = getClass().getResourceAsStream(fileName);
 
     private String temp = "";
-    private String[] words = new String[1882];
+    private String[] words = new String[1882];  // TODO: exception handling with getRandomWord() if havent found res file
 
     public WordReader() {
         try {

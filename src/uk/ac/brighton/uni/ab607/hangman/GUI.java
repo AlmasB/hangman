@@ -17,15 +17,13 @@ public class GUI extends JFrame {
     private static final int LM = 10;
     private static final int TM = 10;
 
-    private static final String BTN_OK = "OK";
     private static final String BTN_NEW = "NEW";
-    private JButton click = new JButton(BTN_OK);
     private JButton again = new JButton(BTN_NEW);
     private ButtonPress onBtnPress = new ButtonPress();
 
     private CustomKeyPress onKey = new CustomKeyPress();
 
-    private JLabel[] labels = new JLabel[4];
+    private JLabel[] labels = new JLabel[4];    // TODO: provide final int indexes to array
 
     private Logic game = new Logic();
 
@@ -42,7 +40,7 @@ public class GUI extends JFrame {
 
         Font font = new Font("Monospaced", Font.BOLD, 20);
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < labels.length; i++) {
             labels[i] = new JLabel();
             labels[i].setFont(font);
             cp.add(labels[i]);
@@ -56,14 +54,19 @@ public class GUI extends JFrame {
         labels[2].setBounds(LM, TM + 50, 200, 40);
         labels[3].setBounds(LM + 200, TM + 30, 200, 40);
 
-        // click.setBounds(LM + 110, TM + 70, 75, 30);
-        // click.addActionListener(onBtnPress);
-        // cp.add(click);
-
         again.setBounds(LM + 195, TM + 70, 75, 30);
         again.addActionListener(onBtnPress);
         again.setEnabled(false);
         cp.add(again);
+
+        setVisible(true);
+    }
+
+    private void gameOver(String message) {
+        labels[3].setText(message);
+        labels[2].setText("");
+        labels[0].setText(game.getWord());
+        again.setEnabled(true);
     }
 
     class CustomKeyPress implements KeyListener {
@@ -83,16 +86,11 @@ public class GUI extends JFrame {
                 labels[1].setText(game.getLives() + " lives");
 
                 if (game.guessed()) {
-                    labels[3].setText("You won");
-                    labels[2].setText("");
-                    again.setEnabled(true);
+                    gameOver("You won");
                 }
 
                 if (game.getLives() == 0) {
-                    labels[3].setText("You lost");
-                    labels[2].setText("");
-                    again.setEnabled(true);
-                    labels[0].setText(game.getWord());
+                    gameOver("You lost");
                 }
             }
         }
