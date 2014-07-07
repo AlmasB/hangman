@@ -9,7 +9,8 @@ public class WordReader {
     private InputStream in = getClass().getResourceAsStream(fileName);
 
     private String temp = "";
-    private String[] words = new String[1882];  // TODO: exception handling with getRandomWord() if havent found res file
+    // to avoid NPE, just in case
+    private String[] words = new String[0];
 
     public WordReader() {
         try {
@@ -29,12 +30,13 @@ public class WordReader {
             words = temp.trim().split(" ");
         }
         catch (Exception e) {
+            System.out.println("Couldn't find/read file: " + fileName);
+            System.out.println("Error message: " + e.getMessage());
         }
     }
 
     public String getRandomWord() {
-        int i = (int) (Math.random() * 1883);
-
-        return words[i];
+        if (words.length == 0) return "NODATA";
+        return words[(int)(Math.random()*words.length)];
     }
 }

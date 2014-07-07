@@ -1,29 +1,26 @@
 package uk.ac.brighton.uni.ab607.hangman;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.*;
 
 public class GUI extends JFrame {
-    /**
-     * Serializable
-     */
     private static final long serialVersionUID = 137507991201396188L;
 
-    private static final int LM = 10;
-    private static final int TM = 10;
+    private JButton again = new JButton("NEW");
 
-    private static final String BTN_NEW = "NEW";
-    private JButton again = new JButton(BTN_NEW);
-    private ButtonPress onBtnPress = new ButtonPress();
+    /**
+     * Indices to labels on the screen, i.e
+     * labels[LETTERS] is the label that shows letters
+     */
+    private static final int LETTERS = 0,
+            LIVES = 1,
+            TYPED = 2,
+            MESSAGE = 3;
 
-    private CustomKeyPress onKey = new CustomKeyPress();
-
-    private JLabel[] labels = new JLabel[4];    // TODO: provide final int indexes to array
+    private JLabel[] labels = new JLabel[4];
 
     private Logic game = new Logic();
 
@@ -31,59 +28,63 @@ public class GUI extends JFrame {
         game.newGame();
 
         setSize(330, 170);
-        setTitle("Hangman 0.5 by Almas");
+        setTitle("Hangman 0.6 by Almas");
+        setLayout(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        addKeyListener(onKey);
+        addKeyListener(new KeyPress());
 
-        Container cp = getContentPane();
-        cp.setLayout(null);
-
-        Font font = new Font("Monospaced", Font.BOLD, 20);
-
-        for (int i = 0; i < labels.length; i++) {
+        for (int i = LETTERS; i <= MESSAGE; i++) {
             labels[i] = new JLabel();
-            labels[i].setFont(font);
-            cp.add(labels[i]);
+            labels[i].setFont(new Font("Monospaced", Font.BOLD, 20));
+            add(labels[i]);
         }
 
-        labels[0].setText(game.getLetters());
-        labels[1].setText(game.getLives() + " lives");
+        labels[LETTERS].setText(game.getLetters());
+        labels[LIVES].setText(game.getLives() + " lives");
 
-        labels[0].setBounds(LM, TM, 200, 40);
-        labels[1].setBounds(LM + 200, TM, 200, 40);
-        labels[2].setBounds(LM, TM + 50, 200, 40);
-        labels[3].setBounds(LM + 200, TM + 30, 200, 40);
+        labels[LETTERS].setBounds(10, 10, 200, 40);
+        labels[LIVES].setBounds(210, 10, 200, 40);
+        labels[TYPED].setBounds(10, 60, 200, 40);
+        labels[MESSAGE].setBounds(210, 40, 200, 40);
 
-        again.setBounds(LM + 195, TM + 70, 75, 30);
-        again.addActionListener(onBtnPress);
+        again.setBounds(205, 80, 75, 30);
+        again.addActionListener(event -> {
+            again.setEnabled(false);
+            GUI.this.requestFocus();
+
+            game.newGame();
+            labels[LETTERS].setText(game.getLetters());
+            labels[LIVES].setText(game.getLives() + " lives");
+            labels[MESSAGE].setText("");
+        });
         again.setEnabled(false);
-        cp.add(again);
+        add(again);
 
         setVisible(true);
     }
 
     private void gameOver(String message) {
-        labels[3].setText(message);
-        labels[2].setText("");
-        labels[0].setText(game.getWord());
+        labels[MESSAGE].setText(message);
+        labels[TYPED].setText("");
+        labels[LETTERS].setText(game.getWord());
         again.setEnabled(true);
     }
 
-    class CustomKeyPress implements KeyListener {
+    class KeyPress implements KeyListener {
         @Override
         public void keyPressed(KeyEvent e) {
             char pressed = KeyEvent.getKeyText(e.getKeyCode()).toLowerCase()
                     .charAt(0);
 
-            String typedSoFar = labels[2].getText();
+            String typedSoFar = labels[TYPED].getText();
 
             if (!game.guessed() && game.getLives() > 0
                     && !typedSoFar.contains(pressed + "")) {
-                labels[2].setText(typedSoFar + pressed);
+                labels[TYPED].setText(typedSoFar + pressed);
 
                 game.guess(pressed);
-                labels[0].setText(game.getLetters());
-                labels[1].setText(game.getLives() + " lives");
+                labels[LETTERS].setText(game.getLetters());
+                labels[LIVES].setText(game.getLives() + " lives");
 
                 if (game.guessed()) {
                     gameOver("You won");
@@ -99,20 +100,5 @@ public class GUI extends JFrame {
         public void keyReleased(KeyEvent e) {}
         @Override
         public void keyTyped(KeyEvent e) {}
-    }
-
-    class ButtonPress implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent ae) {
-            if (ae.getActionCommand() == BTN_NEW) {
-                again.setEnabled(false);
-                GUI.this.requestFocus();
-
-                game.newGame();
-                labels[0].setText(game.getLetters());
-                labels[1].setText(game.getLives() + " lives");
-                labels[3].setText("");
-            }
-        }
     }
 }
