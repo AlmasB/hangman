@@ -1,6 +1,5 @@
 language: java
 jdk:
-  - openjdk7
-  - oraclejdk7
+  - oraclejdk8
 
 script: javac src/uk/ac/brighton/uni/ab607/hangman/*.java
