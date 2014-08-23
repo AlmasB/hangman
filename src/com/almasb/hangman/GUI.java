@@ -1,4 +1,4 @@
-package uk.ac.brighton.uni.ab607.hangman;
+package com.almasb.hangman;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -6,9 +6,8 @@ import java.awt.event.KeyListener;
 
 import javax.swing.*;
 
+@SuppressWarnings("serial")
 public class GUI extends JFrame {
-    private static final long serialVersionUID = 137507991201396188L;
-
     private JButton again = new JButton("NEW");
 
     /**
@@ -28,7 +27,7 @@ public class GUI extends JFrame {
         game.newGame();
 
         setSize(330, 170);
-        setTitle("Hangman 0.6 by Almas");
+        setTitle("Hangman 0.7 by Almas");
         setLayout(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         addKeyListener(new KeyPress());

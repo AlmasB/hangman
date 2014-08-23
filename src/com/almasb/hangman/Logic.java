@@ -1,4 +1,4 @@
-package uk.ac.brighton.uni.ab607.hangman;
+package com.almasb.hangman;
 
 import java.util.Arrays;
 
@@ -30,7 +30,7 @@ public class Logic {
         }
 
         if (!found)
-            lives--;
+            --lives;
     }
 
     public boolean guessed() {

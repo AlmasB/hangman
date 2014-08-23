@@ -1,4 +1,4 @@
-package uk.ac.brighton.uni.ab607.hangman;
+package com.almasb.hangman;
 
 public class Main {
 
