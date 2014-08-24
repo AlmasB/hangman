@@ -25,7 +25,7 @@ public class GUI extends JFrame {
 
     public GUI() {
         setResizable(false);
-        setTitle("Hangman 0.8 by Almas");
+        setTitle("Java Swing GUI");
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         addKeyListener(new KeyPress());
@@ -84,8 +84,8 @@ public class GUI extends JFrame {
         });
 
         game.newGame();
-        pack();
         setVisible(true);
+        pack();
     }
 
     private void gameOver(String message) {
