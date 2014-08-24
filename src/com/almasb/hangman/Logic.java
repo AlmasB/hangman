@@ -2,21 +2,43 @@ package com.almasb.hangman;
 
 import java.util.Arrays;
 
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+
 public class Logic {
     private static final int MAX_LIVES = 7;
 
     private String word = "";
     private char[] letters;
-    private int lives = 0;
+    private SimpleStringProperty guessedLetters = new SimpleStringProperty();
+    private SimpleIntegerProperty lives = new SimpleIntegerProperty();
+    private SimpleBooleanProperty playable = new SimpleBooleanProperty();
 
     private WordReader wr = new WordReader();
 
-    public void newGame() {
-        lives = MAX_LIVES;
+    public Logic() {
+        playable.addListener((obs, oldValue, newValue) -> {
+            if (!newValue.booleanValue())
+                guessedLetters.set(word);
+        });
+        lives.addListener((obs, oldValue, newValue) -> {
+            if (newValue.intValue() == 0)
+                playable.set(false);
+        });
+        guessedLetters.addListener((obs, old, newValue) -> {
+            if (!newValue.contains("."))
+                playable.set(false);
+        });
+    }
 
+    public void newGame() {
+        lives.set(MAX_LIVES);
         word = wr.getRandomWord();
         letters = new char[word.length()];
         Arrays.fill(letters, '.');
+        guessedLetters.set(new String(letters));
+        playable.set(true);
     }
 
     public void guess(char c) {
@@ -26,11 +48,12 @@ public class Logic {
             if (word.charAt(i) == c) {
                 found = true;
                 letters[i] = c;
+                guessedLetters.set(new String(letters));
             }
         }
 
         if (!found)
-            --lives;
+            lives.set(lives.get() - 1);
     }
 
     public boolean guessed() {
@@ -41,15 +64,15 @@ public class Logic {
         return true;
     }
 
-    public String getLetters() {
-        return new String(letters);
-    }
-
-    public int getLives() {
+    public SimpleIntegerProperty livesProperty() {
         return lives;
     }
 
-    public String getWord() {
-        return word;
+    public SimpleBooleanProperty playableProperty() {
+        return playable;
+    }
+
+    public SimpleStringProperty guessedLettersProperty() {
+        return guessedLetters;
     }
 }

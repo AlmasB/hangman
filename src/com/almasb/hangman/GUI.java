@@ -24,74 +24,86 @@ public class GUI extends JFrame {
     private Logic game = new Logic();
 
     public GUI() {
-        game.newGame();
-
-        setSize(330, 170);
-        setTitle("Hangman 0.7 by Almas");
-        setLayout(null);
+        setResizable(false);
+        setTitle("Hangman 0.8 by Almas");
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         addKeyListener(new KeyPress());
 
         for (int i = LETTERS; i <= MESSAGE; i++) {
             labels[i] = new JLabel();
             labels[i].setFont(new Font("Monospaced", Font.BOLD, 20));
-            add(labels[i]);
         }
 
-        labels[LETTERS].setText(game.getLetters());
-        labels[LIVES].setText(game.getLives() + " lives");
-
-        labels[LETTERS].setBounds(10, 10, 200, 40);
-        labels[LIVES].setBounds(210, 10, 200, 40);
-        labels[TYPED].setBounds(10, 60, 200, 40);
-        labels[MESSAGE].setBounds(210, 40, 200, 40);
-
-        again.setBounds(205, 80, 75, 30);
         again.addActionListener(event -> {
+            labels[MESSAGE].setText("");
             again.setEnabled(false);
             GUI.this.requestFocus();
-
             game.newGame();
-            labels[LETTERS].setText(game.getLetters());
-            labels[LIVES].setText(game.getLives() + " lives");
-            labels[MESSAGE].setText("");
+            pack();
         });
         again.setEnabled(false);
-        add(again);
 
+        GroupLayout layout = new GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setAutoCreateGaps(true);
+        layout.setAutoCreateContainerGaps(true);
+
+        layout.setHorizontalGroup(layout.createParallelGroup()
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(labels[LETTERS])
+                        .addGap(50)
+                        .addComponent(labels[LIVES])
+                        .addComponent(again))
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(labels[TYPED])
+                                .addComponent(labels[MESSAGE]))
+                );
+
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup()
+                        .addComponent(labels[LETTERS])
+                        .addComponent(labels[LIVES])
+                        .addComponent(again))
+                        .addGroup(layout.createParallelGroup()
+                                .addComponent(labels[TYPED])
+                                .addComponent(labels[MESSAGE]))
+                );
+
+        game.livesProperty().addListener((observable, oldValue, newValue) -> {
+            labels[LIVES].setText(newValue.intValue() + " lives");
+            pack();
+        });
+        game.playableProperty().addListener((obs, old, newValue) -> {
+            if (!newValue.booleanValue())
+                gameOver(game.guessed() ? "You win" : "You lose");
+        });
+        game.guessedLettersProperty().addListener((obs, old, newValue) -> {
+            labels[LETTERS].setText(newValue);
+            pack();
+        });
+
+        game.newGame();
+        pack();
         setVisible(true);
     }
 
     private void gameOver(String message) {
         labels[MESSAGE].setText(message);
         labels[TYPED].setText("");
-        labels[LETTERS].setText(game.getWord());
         again.setEnabled(true);
     }
 
-    class KeyPress implements KeyListener {
+    private class KeyPress implements KeyListener {
         @Override
         public void keyPressed(KeyEvent e) {
-            char pressed = KeyEvent.getKeyText(e.getKeyCode()).toLowerCase()
-                    .charAt(0);
+            char pressed = KeyEvent.getKeyText(e.getKeyCode()).toLowerCase().charAt(0);
 
             String typedSoFar = labels[TYPED].getText();
 
-            if (!game.guessed() && game.getLives() > 0
-                    && !typedSoFar.contains(pressed + "")) {
+            if (game.playableProperty().get() && !typedSoFar.contains(pressed + "")) {
                 labels[TYPED].setText(typedSoFar + pressed);
-
                 game.guess(pressed);
-                labels[LETTERS].setText(game.getLetters());
-                labels[LIVES].setText(game.getLives() + " lives");
-
-                if (game.guessed()) {
-                    gameOver("You won");
-                }
-
-                if (game.getLives() == 0) {
-                    gameOver("You lost");
-                }
             }
         }
 
