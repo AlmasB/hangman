@@ -76,6 +76,11 @@ public class HangmanMain extends Application {
             letBox.getChildren().add(t);
         }
 
+        Text hyphen = new Text("-");
+        hyphen.setFont(DEFAULT_FONT);
+        map.put('-', hyphen);
+        letBox.getChildren().add(hyphen);
+
         VBox vBox = new VBox(10);
         vBox.setPrefSize(600, 300);
         vBox.getChildren().addAll(row1, lettersBox, row3, letBox,
@@ -143,7 +148,7 @@ public class HangmanMain extends Application {
                 return;
 
             char pressed = event.getText().toUpperCase().charAt(0);
-            if (pressed < 'A' || pressed > 'Z')
+            if ((pressed < 'A' || pressed > 'Z') && pressed != '-')
                 return;
 
             if (game.playableProperty().get() && !lettersUsed.getText().contains(String.valueOf(pressed))) {
