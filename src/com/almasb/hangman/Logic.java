@@ -9,7 +9,7 @@ import javafx.beans.property.SimpleStringProperty;
 public class Logic {
     private static final int MAX_LIVES = 7;
 
-    private String word = "";
+    private SimpleStringProperty word = new SimpleStringProperty();
     private char[] letters;
     private SimpleStringProperty guessedLetters = new SimpleStringProperty();
     private SimpleIntegerProperty lives = new SimpleIntegerProperty();
@@ -20,7 +20,7 @@ public class Logic {
     public Logic() {
         playable.addListener((obs, oldValue, newValue) -> {
             if (!newValue.booleanValue())
-                guessedLetters.set(word);
+                guessedLetters.set(word.get());
         });
         lives.addListener((obs, oldValue, newValue) -> {
             if (newValue.intValue() == 0)
@@ -34,8 +34,8 @@ public class Logic {
 
     public void newGame() {
         lives.set(MAX_LIVES);
-        word = wr.getRandomWord();
-        letters = new char[word.length()];
+        word.set(wr.getRandomWord().toUpperCase());
+        letters = new char[word.get().length()];
         Arrays.fill(letters, '.');
         guessedLetters.set(new String(letters));
         playable.set(true);
@@ -44,8 +44,8 @@ public class Logic {
     public void guess(char c) {
         boolean found = false;
 
-        for (int i = 0; i < word.length(); i++) {
-            if (word.charAt(i) == c) {
+        for (int i = 0; i < word.get().length(); i++) {
+            if (word.get().charAt(i) == c) {
                 found = true;
                 letters[i] = c;
                 guessedLetters.set(new String(letters));
@@ -74,5 +74,9 @@ public class Logic {
 
     public SimpleStringProperty guessedLettersProperty() {
         return guessedLetters;
+    }
+
+    public SimpleStringProperty wordProperty() {
+        return word;
     }
 }
