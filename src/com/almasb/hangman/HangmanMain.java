@@ -4,6 +4,9 @@ import java.util.HashMap;
 
 import javafx.animation.RotateTransition;
 import javafx.application.Application;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -24,38 +27,74 @@ import javafx.util.Duration;
 
 public class HangmanMain extends Application {
 
+    private static final int MAX_LIVES = 7;
+
+    private static final int APP_W = 600;
+    private static final int APP_H = 300;
     private static final Font DEFAULT_FONT = new Font("Courier", 36);
 
-    private Logic game = new Logic();
+    /**
+     * The word to guess
+     */
+    private SimpleStringProperty word = new SimpleStringProperty();
 
+    /**
+     * How many letters left to guess
+     */
+    private SimpleIntegerProperty lettersToGuess = new SimpleIntegerProperty();
+
+    /**
+     * How many lives left
+     */
+    private SimpleIntegerProperty lives = new SimpleIntegerProperty();
+
+    /**
+     * Is game playable
+     */
+    private SimpleBooleanProperty playable = new SimpleBooleanProperty();
+
+    /**
+     * List for letters of the word {@link #word}
+     * It is backed up by the HBox children list,
+     * so changes to this list directly affect the GUI
+     */
     private ObservableList<Node> letters;
 
-    private Text lettersUsed = new Text("");
-    private Text lives = new Text("");
-    private Text message = new Text("");
+    /**
+     * Text to show number of lives left
+     */
+    private Text textLives = new Text("");
 
-    private Button again = new Button("NEW");
+    /**
+     * Game messages
+     */
+    private Text textMessage = new Text("");
 
-    private HashMap<Character, Text> map = new HashMap<Character, Text>();
+    private Button btnAgain = new Button("NEW GAME");
+
+    /**
+     * K - characters [A..Z] and '-'
+     * V - javafx.scene.Text representation of K
+     */
+    private HashMap<Character, Text> alphabet = new HashMap<Character, Text>();
+
+    private WordReader wordReader = new WordReader();
 
     public Parent createContent() {
-        HBox lettersBox = new HBox();
-        lettersBox.setAlignment(Pos.CENTER);
-        letters = lettersBox.getChildren();
+        HBox rowLetters = new HBox();
+        rowLetters.setAlignment(Pos.CENTER);
+        letters = rowLetters.getChildren();
 
-        lettersUsed.setFont(DEFAULT_FONT);
+        playable.bind(lives.greaterThan(0).and(lettersToGuess.greaterThan(0)));
+        btnAgain.disableProperty().bind(playable);
+        textLives.textProperty().bind(lives.asString().concat(" Lives"));
 
-        again.disableProperty().bind(game.playableProperty());
-        lives.textProperty().bind(game.livesProperty().asString().concat(" Lives"));
-
-        again.setOnAction(event -> {
-            startGame();
-        });
-
-        game.playableProperty().addListener((obs, old, newValue) -> {
+        playable.addListener((obs, old, newValue) -> {
             if (!newValue.booleanValue())
-                stopGame(game.guessed() ? "You win" : "You lose");
+                stopGame();
         });
+
+        btnAgain.setOnAction(event -> startGame());
 
         // layout
         HBox row1 = new HBox();
@@ -67,30 +106,35 @@ public class HangmanMain extends Application {
             row3.getChildren().add(new Letter(' '));
         }
 
-        HBox letBox = new HBox(5);
-        letBox.setAlignment(Pos.CENTER);
+        HBox rowAlphabet = new HBox(5);
+        rowAlphabet.setAlignment(Pos.CENTER);
         for (char c = 'A'; c <= 'Z'; c++) {
             Text t = new Text(String.valueOf(c));
             t.setFont(DEFAULT_FONT);
-            map.put(c, t);
-            letBox.getChildren().add(t);
+            alphabet.put(c, t);
+            rowAlphabet.getChildren().add(t);
         }
 
         Text hyphen = new Text("-");
         hyphen.setFont(DEFAULT_FONT);
-        map.put('-', hyphen);
-        letBox.getChildren().add(hyphen);
+        alphabet.put('-', hyphen);
+        rowAlphabet.getChildren().add(hyphen);
 
         VBox vBox = new VBox(10);
-        vBox.setPrefSize(600, 300);
-        vBox.getChildren().addAll(row1, lettersBox, row3, letBox,
-                new HBox(10, lives, again));
+        vBox.setPrefSize(APP_W, APP_H);
+
+        // vertical layout
+        vBox.getChildren().addAll(
+                row1,
+                rowLetters,
+                row3,
+                rowAlphabet,
+                new HBox(10, textLives, btnAgain, textMessage));
         return vBox;
     }
 
-    private void stopGame(String msg) {
-        message.setText(msg);
-        lettersUsed.setText("");
+    private void stopGame() {
+        textMessage.setText(lettersToGuess.get() == 0 ? "You win" : "You lose");
 
         for (Node n : letters) {
             Letter letter = (Letter) n;
@@ -99,14 +143,17 @@ public class HangmanMain extends Application {
     }
 
     private void startGame() {
-        for (Text t : map.values()) {
+        for (Text t : alphabet.values()) {
             t.setStrikethrough(false);
             t.setFill(Color.BLACK);
         }
-        message.setText("");
-        game.newGame();
+        textMessage.setText("");
+        lives.set(MAX_LIVES);
+        word.set(wordReader.getRandomWord().toUpperCase());
+        lettersToGuess.set(word.length().get());
+
         letters.clear();
-        for (char c : game.wordProperty().get().toCharArray()) {
+        for (char c : word.get().toCharArray()) {
             letters.add(new Letter(c));
         }
     }
@@ -151,19 +198,28 @@ public class HangmanMain extends Application {
             if ((pressed < 'A' || pressed > 'Z') && pressed != '-')
                 return;
 
-            if (game.playableProperty().get() && !lettersUsed.getText().contains(String.valueOf(pressed))) {
-                map.get(pressed).setFill(Color.BLUE);
-                map.get(pressed).setStrikethrough(true);
+            if (playable.get()) {
+                Text t = alphabet.get(pressed);
+                if (t.isStrikethrough())
+                    return;
 
-                lettersUsed.setText(lettersUsed.getText() + pressed);
-                game.guess(pressed);
+                // mark the letter 'used'
+                t.setFill(Color.BLUE);
+                t.setStrikethrough(true);
+
+                boolean found = false;
 
                 for (Node n : letters) {
                     Letter letter = (Letter) n;
                     if (letter.isEqualTo(pressed)) {
+                        found = true;
+                        lettersToGuess.set(lettersToGuess.get() - 1);
                         letter.show();
                     }
                 }
+
+                if (!found)
+                    lives.set(lives.get() - 1);
             }
         });
 
