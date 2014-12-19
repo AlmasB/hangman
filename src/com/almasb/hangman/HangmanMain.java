@@ -27,11 +27,13 @@ import javafx.util.Duration;
 
 public class HangmanMain extends Application {
 
-    private static final int MAX_LIVES = 7;
-
     private static final int APP_W = 600;
     private static final int APP_H = 300;
     private static final Font DEFAULT_FONT = new Font("Courier", 36);
+
+    private static final int MAX_LIVES = 7;
+    private static final int POINTS_PER_LETTER = 100;
+    private static final float BONUS_MODIFIER = 0.2f;
 
     /**
      * The word to guess
@@ -49,6 +51,16 @@ public class HangmanMain extends Application {
     private SimpleIntegerProperty lives = new SimpleIntegerProperty();
 
     /**
+     * Current score
+     */
+    private SimpleIntegerProperty score = new SimpleIntegerProperty();
+
+    /**
+     * How many points next correct letter is worth
+     */
+    private float scoreModifier = 1.0f;
+
+    /**
      * Is game playable
      */
     private SimpleBooleanProperty playable = new SimpleBooleanProperty();
@@ -59,18 +71,6 @@ public class HangmanMain extends Application {
      * so changes to this list directly affect the GUI
      */
     private ObservableList<Node> letters;
-
-    /**
-     * Text to show number of lives left
-     */
-    private Text textLives = new Text("");
-
-    /**
-     * Game messages
-     */
-    private Text textMessage = new Text("");
-
-    private Button btnAgain = new Button("NEW GAME");
 
     /**
      * K - characters [A..Z] and '-'
@@ -86,14 +86,13 @@ public class HangmanMain extends Application {
         letters = rowLetters.getChildren();
 
         playable.bind(lives.greaterThan(0).and(lettersToGuess.greaterThan(0)));
-        btnAgain.disableProperty().bind(playable);
-        textLives.textProperty().bind(lives.asString().concat(" Lives"));
-
         playable.addListener((obs, old, newValue) -> {
             if (!newValue.booleanValue())
                 stopGame();
         });
 
+        Button btnAgain = new Button("NEW GAME");
+        btnAgain.disableProperty().bind(playable);
         btnAgain.setOnAction(event -> startGame());
 
         // layout
@@ -120,6 +119,12 @@ public class HangmanMain extends Application {
         alphabet.put('-', hyphen);
         rowAlphabet.getChildren().add(hyphen);
 
+        Text textLives = new Text();
+        textLives.textProperty().bind(lives.asString().concat(" Lives"));
+
+        Text textScore = new Text();
+        textScore.textProperty().bind(score.asString().concat(" Points"));
+
         VBox vBox = new VBox(10);
         vBox.setPrefSize(APP_W, APP_H);
 
@@ -129,13 +134,11 @@ public class HangmanMain extends Application {
                 rowLetters,
                 row3,
                 rowAlphabet,
-                new HBox(10, textLives, btnAgain, textMessage));
+                new HBox(10, textLives, btnAgain, textScore));
         return vBox;
     }
 
     private void stopGame() {
-        textMessage.setText(lettersToGuess.get() == 0 ? "You win" : "You lose");
-
         for (Node n : letters) {
             Letter letter = (Letter) n;
             letter.show();
@@ -147,7 +150,7 @@ public class HangmanMain extends Application {
             t.setStrikethrough(false);
             t.setFill(Color.BLACK);
         }
-        textMessage.setText("");
+
         lives.set(MAX_LIVES);
         word.set(wordReader.getRandomWord().toUpperCase());
         lettersToGuess.set(word.length().get());
@@ -213,13 +216,19 @@ public class HangmanMain extends Application {
                     Letter letter = (Letter) n;
                     if (letter.isEqualTo(pressed)) {
                         found = true;
+                        score.set(score.get() + (int)(scoreModifier * POINTS_PER_LETTER));
                         lettersToGuess.set(lettersToGuess.get() - 1);
                         letter.show();
                     }
                 }
 
-                if (!found)
+                if (!found) {
                     lives.set(lives.get() - 1);
+                    scoreModifier = 1.0f;
+                }
+                else {
+                    scoreModifier += BONUS_MODIFIER;
+                }
             }
         });
 
