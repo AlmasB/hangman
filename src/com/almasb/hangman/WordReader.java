@@ -1,21 +1,22 @@
 package com.almasb.hangman;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class WordReader {
     private static final String fileName = "/res/words.txt";
 
-    private String[] words = new String[0];
+    private ArrayList<String> words = new ArrayList<String>();
 
     public WordReader() {
         try (InputStream in = getClass().getResourceAsStream(fileName);
                 BufferedReader bf = new BufferedReader(new InputStreamReader(in))) {
 
-            String line = "", accumulator = "";
+            String line = "";
             while ((line = bf.readLine()) != null)
-                accumulator += " " + line;
-
-            words = accumulator.trim().split(" ");
+                words.add(line);
         }
         catch (Exception e) {
             System.out.println("Couldn't find/read file: " + fileName);
@@ -24,7 +25,7 @@ public class WordReader {
     }
 
     public String getRandomWord() {
-        if (words.length == 0) return "NODATA";
-        return words[(int)(Math.random()*words.length)];
+        if (words.isEmpty()) return "NO-DATA";
+        return words.get((int)(Math.random()*words.size()));
     }
 }
