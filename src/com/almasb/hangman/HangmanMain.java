@@ -18,6 +18,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -27,11 +29,11 @@ import javafx.util.Duration;
 
 public class HangmanMain extends Application {
 
-    private static final int APP_W = 600;
-    private static final int APP_H = 300;
+    private static final int APP_W = 900;
+    private static final int APP_H = 500;
     private static final Font DEFAULT_FONT = new Font("Courier", 36);
 
-    private static final int MAX_LIVES = 7;
+    // we have 6 parts of the hangman
     private static final int POINTS_PER_LETTER = 100;
     private static final float BONUS_MODIFIER = 0.2f;
 
@@ -44,11 +46,6 @@ public class HangmanMain extends Application {
      * How many letters left to guess
      */
     private SimpleIntegerProperty lettersToGuess = new SimpleIntegerProperty();
-
-    /**
-     * How many lives left
-     */
-    private SimpleIntegerProperty lives = new SimpleIntegerProperty();
 
     /**
      * Current score
@@ -78,6 +75,8 @@ public class HangmanMain extends Application {
      */
     private HashMap<Character, Text> alphabet = new HashMap<Character, Text>();
 
+    private HangmanImage hangman = new HangmanImage();
+
     private WordReader wordReader = new WordReader();
 
     public Parent createContent() {
@@ -85,7 +84,7 @@ public class HangmanMain extends Application {
         rowLetters.setAlignment(Pos.CENTER);
         letters = rowLetters.getChildren();
 
-        playable.bind(lives.greaterThan(0).and(lettersToGuess.greaterThan(0)));
+        playable.bind(hangman.lives.greaterThan(0).and(lettersToGuess.greaterThan(0)));
         playable.addListener((obs, old, newValue) -> {
             if (!newValue.booleanValue())
                 stopGame();
@@ -119,22 +118,20 @@ public class HangmanMain extends Application {
         alphabet.put('-', hyphen);
         rowAlphabet.getChildren().add(hyphen);
 
-        Text textLives = new Text();
-        textLives.textProperty().bind(lives.asString().concat(" Lives"));
-
         Text textScore = new Text();
         textScore.textProperty().bind(score.asString().concat(" Points"));
 
-        VBox vBox = new VBox(10);
-        vBox.setPrefSize(APP_W, APP_H);
+        HBox rowHangman = new HBox(10, btnAgain, textScore, hangman);
+        rowHangman.setAlignment(Pos.CENTER);
 
+        VBox vBox = new VBox(10);
         // vertical layout
         vBox.getChildren().addAll(
                 row1,
                 rowLetters,
                 row3,
                 rowAlphabet,
-                new HBox(10, textLives, btnAgain, textScore));
+                rowHangman);
         return vBox;
     }
 
@@ -151,13 +148,78 @@ public class HangmanMain extends Application {
             t.setFill(Color.BLACK);
         }
 
-        lives.set(MAX_LIVES);
+        hangman.reset();
         word.set(wordReader.getRandomWord().toUpperCase());
         lettersToGuess.set(word.length().get());
 
         letters.clear();
         for (char c : word.get().toCharArray()) {
             letters.add(new Letter(c));
+        }
+    }
+
+    private static class HangmanImage extends Parent {
+        private static final int SPINE_START_X = 100;
+        private static final int SPINE_START_Y = 20;
+        private static final int SPINE_END_X = SPINE_START_X;
+        private static final int SPINE_END_Y = SPINE_START_Y + 50;
+
+        /**
+         * How many lives left
+         */
+        private SimpleIntegerProperty lives = new SimpleIntegerProperty();
+
+        public HangmanImage() {
+            Circle head = new Circle(20);
+            head.setTranslateX(SPINE_START_X);
+
+            Line spine = new Line();
+            spine.setStartX(SPINE_START_X);
+            spine.setStartY(SPINE_START_Y);
+            spine.setEndX(SPINE_END_X);
+            spine.setEndY(SPINE_END_Y);
+
+            Line leftArm = new Line();
+            leftArm.setStartX(SPINE_START_X);
+            leftArm.setStartY(SPINE_START_Y);
+            leftArm.setEndX(SPINE_START_X + 40);
+            leftArm.setEndY(SPINE_START_Y + 10);
+
+            Line rightArm = new Line();
+            rightArm.setStartX(SPINE_START_X);
+            rightArm.setStartY(SPINE_START_Y);
+            rightArm.setEndX(SPINE_START_X - 40);
+            rightArm.setEndY(SPINE_START_Y + 10);
+
+            Line leftLeg = new Line();
+            leftLeg.setStartX(SPINE_END_X);
+            leftLeg.setStartY(SPINE_END_Y);
+            leftLeg.setEndX(SPINE_END_X + 25);
+            leftLeg.setEndY(SPINE_END_Y + 50);
+
+            Line rightLeg = new Line();
+            rightLeg.setStartX(SPINE_END_X);
+            rightLeg.setStartY(SPINE_END_Y);
+            rightLeg.setEndX(SPINE_END_X - 25);
+            rightLeg.setEndY(SPINE_END_Y + 50);
+
+            getChildren().addAll(head, spine, leftArm, rightArm, leftLeg, rightLeg);
+            lives.set(getChildren().size());
+        }
+
+        public void reset() {
+            getChildren().forEach(node -> node.setVisible(false));
+            lives.set(getChildren().size());
+        }
+
+        public void takeAwayLife() {
+            for (Node n : getChildren()) {
+                if (!n.isVisible()) {
+                    n.setVisible(true);
+                    lives.set(lives.get() - 1);
+                    break;
+                }
+            }
         }
     }
 
@@ -223,7 +285,7 @@ public class HangmanMain extends Application {
                 }
 
                 if (!found) {
-                    lives.set(lives.get() - 1);
+                    hangman.takeAwayLife();
                     scoreModifier = 1.0f;
                 }
                 else {
@@ -233,6 +295,8 @@ public class HangmanMain extends Application {
         });
 
         primaryStage.setResizable(false);
+        primaryStage.setWidth(APP_W);
+        primaryStage.setHeight(APP_H);
         primaryStage.setTitle("Hangman");
         primaryStage.setScene(scene);
         primaryStage.show();
