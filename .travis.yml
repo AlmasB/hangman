@@ -1,6 +1,0 @@
-language: java
-jdk:
-  - oraclejdk8
-
-before_script: cd src/
-script: javac com/almasb/hangman/*.java
